@@ -1,0 +1,26 @@
+#!/bin/sh
+FOTO="$1"
+
+if [ -z "$FOTO" ]
+then
+	echo "Usage: $0 FOTO" >&2
+	exit 1
+fi
+
+if [ ! -r "$FOTO" ]
+then
+	echo "La imagen $FOTO no se puede leer" >&2
+	exit 1
+fi
+
+CMD=gnome-open
+URL='http://maps.google.com/?q='
+GPS_POS="`exiftool -c %.12f $FOTO |grep 'GPS Position' | cut -d: -f2 | sed 's/^\s*\|\s*$//g'`"
+
+if [ -z "$GPS_POS" ]
+then
+	echo "La imagen $FOTO no tiene coordenadas GPS" >&2
+	exit 1
+fi
+
+gnome-open "${URL}${GPS_POS}"

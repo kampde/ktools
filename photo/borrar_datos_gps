@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+	echo "Usage: $0 carpeta [carpeta ..]" >&2
+	exit 1
+fi
+
+FIN=0
+for carpeta
+do
+	if [ ! -d "$carpeta" ]
+	then
+		echo "WARNING: $carpeta no es una carpeta, la omitimos" >&2
+		FIN=2
+		continue
+	fi
+	ARCH_GPX=`ls "$carpeta"/*.gpx | wc -l`
+	if [ $ARCH_GPX -eq 0 ]
+	then
+		echo "WARNING: $carpeta no tiene datos gpx ($ARCH_GPX), la omitimos" >&2
+		FIN=2
+		continue
+	fi
+	echo "Borrando datos GPS de $carpeta..."
+	exiftool -GPS:all= "$carpeta"
+done
+
+exit $FIN

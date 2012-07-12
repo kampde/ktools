@@ -1,0 +1,87 @@
+#!/bin/bash
+
+TAMANYO="1680x1050"
+
+if [ "${1:0:2}" = "-t" ]
+then
+	TAMANYO="${1:2}"
+	shift
+fi
+
+if [ "$#" -eq 0 ]
+then
+	echo "Uso: $0 [ -tTAMANYO ] carpeta [carpeta ...]" >&2
+	exit 1
+fi
+
+SALIDA_SCRIPT=0
+CARPETA_BASE="`pwd`"
+
+haz_miniaturas() {
+	SALIDA_FUNCION=0
+	carpeta="$1"
+	TAMANYO="$2"
+
+	# cmd1 ; cmd2 ==> Ejecuta cmd1 y, cuando acaba, ejecuta cmd2 (sin importar como acaba cmd1)
+	# cmd1 && cmd2 ==> Sólo ejecuta cmd2 si y solo si cmd1 se ha ejecutado bien ($? = 0)
+	# cmd1 || cmd2 ==> Sólo ejecuta cmd2 si y solo si cmd1 ha petado ($? != 0)
+
+	if [ ! -d "$carpeta" ]
+	then
+		echo "$carpeta no es un directorio" >&2
+		return 2
+	fi
+
+	[ -x "$carpeta" ] ||  { echo "No puedo entrar en $carpeta" >&2; return 2 ; }
+	[ -w "$carpeta" ] ||  { echo "No puedo escribir en $carpeta" >&2; return 2 ; }
+
+	cd "$carpeta"
+
+	mkdir -p miniaturas
+
+	# convertir todos los archivos a minusculas (no tiene en cuenta acentos)
+	# WARNING!! si existen archivos hola.jpg y HOLA.JPG, machacaría hola.jpg y renombraría HOLA.jpg a hola.jpg
+	for arch in *
+	do
+		arch_minus="`echo $arch | tr '[A-Z]' '[a-z]'`"
+		mv -f "$arch" "$arch_minus" &> /dev/null
+	done
+
+	for foto in *.jpg
+	do
+		if [ "${foto:0:1}" = "*" ]
+		then
+			echo "No hay fotos en $carpeta" >&2
+			return 2
+		else
+			echo -n "Miniaturizando $carpeta/$foto..."
+			if convert "$foto" -resize "$TAMANYO" "miniaturas/$foto"
+			then
+				echo "OK"
+			else
+				echo "FAIL"
+				SALIDA_FUNCION=3
+			fi
+			
+		fi
+	done
+
+	rmdir miniaturas --ignore-fail-on-non-empty
+
+	return $SALIDA_FUNCION
+}
+
+
+for carpeta # in "$1" "$2" "$3"...
+do
+	cd "$CARPETA_BASE"
+	haz_miniaturas "$carpeta" "$TAMANYO"
+	RES=$?
+	if [ "$RES" -ne 0 ]
+	then
+		SALIDA_SCRIPT="$RES"
+	fi
+
+done
+
+exit $SALIDA_SCRIPT

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+EXITVAL=0
+
+for i
+do
+	ext="${i: -4}"
+	if [ "${ext}" = ".nef" -o "${ext}" = ".NEF" ]
+	then
+
+		nom="../"${i:0:8}".from_raw.jpg"
+		if [ -e "$nom" ]
+		then
+			echo $nom existe
+		else
+			echo -n "Creando $nom ... "
+			if dcraw -e -c $i > $nom
+			then
+				echo "  OK"
+			else
+				echo "  MIERDA"
+				EXITVAL=3
+			fi
+		fi
+	else
+		echo "$i no es una imagen raw (NEF)" >&2
+		EXITVAL=1
+	fi
+done

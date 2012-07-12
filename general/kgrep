@@ -1,0 +1,39 @@
+#!/bin/bash
+if [ $# -lt 1 ] ; then
+	echo "usage: $(basename $0) pattern [\"tipus fitxers on mirar\" [\"fitxers on no mirar grep -v\"]]"
+	exit 1
+fi
+if [ $# -gt 3 ] ; then
+	echo "usage: $(basename $0) pattern [\"tipus fitxers on mirar\" [\"fitxers on no mirar grep -v\"]]"
+	exit 1
+fi
+if [ $# -gt 1 ] ; then
+	#tenim parametre 2, i potser 3...
+	EXT_INCLUDE=( $2 )
+	
+	if [ $# -gt 2 ] ; then
+		# substitueix els espais de $3 per \|, per al egrep de baix
+		GREP_V=${3// /\|}
+	fi
+
+fi
+if [ ! $EXT_INCLUDE ] ; then
+	EXT_INCLUDE[0]=php
+fi
+
+NUM_INCLUDES=${#EXT_INCLUDE[*]}
+i=0
+PARAMS=""
+while [ $i -lt $NUM_INCLUDES ] ; do
+	PARAMS="$PARAMS --include=*${EXT_INCLUDE[$i]}"
+	i=`expr $i + 1`
+done
+
+
+if [ ! "${GREP_V}" ] ; then
+	echo "grep -r --color=auto $PARAMS \"$1\" ."
+	grep -r --color=auto $PARAMS "$1" .
+else 
+	echo "grep -r $PARAMS \"$1\" . | grep -v $GREP_V | grep --color=auto \"$1\""
+	grep -r $PARAMS "$1" . | egrep -v ${GREP_V} | grep --color=auto "$1"
+fi

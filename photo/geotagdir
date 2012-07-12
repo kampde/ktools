@@ -1,0 +1,34 @@
+#!/bin/bash
+
+CMD=/usr/local/bin/gpsPhoto.pl
+
+TIEMPO_OFFSET=0
+
+if [ ! -x $CMD ]
+then
+	echo "No se encuentra gpsPhoto.pl o no es ejecutable" >&2
+	exit 1
+fi
+
+for dir
+do
+	if [ ! -d "${dir}" ]
+	then
+		echo "$dir no es un directorio" >&2
+		exit 1
+	fi
+done
+
+
+for dir
+do
+	echo "Trabajando carpeta ${dir}..."
+	echo "	eliminando registros gps..."
+	borrar_datos_gps "${dir}"
+	echo "	geotaggeando..."
+	${CMD} --timeoffset "${TIEMPO_OFFSET}" --maxtimediff 600 --dir "${dir}" --gpsdir "${dir}" ${OVERWRITE} >> "${dir}/geotag.log" 2>> ${dir}/geotag.err
+	echo
+	echo "Carpeta ${dir} finalizada"
+	echo
+done
+
