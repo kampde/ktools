@@ -1,12 +1,20 @@
 #!/bin/bash
 
-CMD=/usr/local/bin/gpsPhoto.pl
+SCRIPT=`readlink -f "$0"`
+GPSPHOTO=`dirname "$SCRIPT"`/gpsPhoto.pl
+REMOVE_GPS=`dirname "$SCRIPT"`/borrar_datos_gps
 
-TIEMPO_OFFSET=0
+TIMEOFFSET=0
 
-if [ ! -x $CMD ]
+if [ ! -x $GPSPHOTO ]
 then
-	echo "No se encuentra gpsPhoto.pl o no es ejecutable" >&2
+	echo "Can't find gpsPhoto.pl or it is not executable" >&2
+	exit 1
+fi
+
+if [ ! -x $REMOVE_GPS ]
+then
+	echo "Can't find the remove gps script or it is not executable" >&2
 	exit 1
 fi
 
@@ -14,7 +22,7 @@ for dir
 do
 	if [ ! -d "${dir}" ]
 	then
-		echo "$dir no es un directorio" >&2
+		echo "$dir is not a directory" >&2
 		exit 1
 	fi
 done
@@ -22,13 +30,16 @@ done
 
 for dir
 do
-	echo "Trabajando carpeta ${dir}..."
-	echo "	eliminando registros gps..."
-	borrar_datos_gps "${dir}"
-	echo "	geotaggeando..."
-	${CMD} --timeoffset "${TIEMPO_OFFSET}" --maxtimediff 600 --dir "${dir}" --gpsdir "${dir}" ${OVERWRITE} >> "${dir}/geotag.log" 2>> ${dir}/geotag.err
+	echo "Working on ${dir}..."
+	echo "Removing old GPS data on ${dir}..."
+	$REMOVE_GPS "${dir}" | while read LINE
+	do
+		echo "    $LINE"
+	done
+	echo "geotagging ${dir}..."
+	$GPSPHOTO --timeoffset "${TIMEOFFSET}" --maxtimediff 600 --dir "${dir}" --gpsdir "${dir}" >> "${dir}/geotag.log" 2>> ${dir}/geotag.err
 	echo
-	echo "Carpeta ${dir} finalizada"
+	echo "Folder ${dir} done"
 	echo
 done
 
