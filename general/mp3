@@ -1,0 +1,69 @@
+#!/bin/sh
+
+truefalse() {
+	ANSWER=
+	while [ "$ANSWER" != "y" -a "$ANSWER" != "n" ]
+	do
+		read -p "$*" ANSWER
+		case "$ANSWER" in
+			y|yes|si|s)
+				ANSWER=y
+				;;
+			n|no)
+				ANSWER=n
+				;;
+		esac
+	done
+}
+
+if [ $# -ne 3 ]
+then
+	echo "Uso: $0 path/to/mp3/library path/to/destination/folder max_size" >&2
+	exit 1
+fi
+
+LIBRARY="$1"
+DESTINATION=`readlink -f "$2"`
+MAX_SIZE="$3"
+[ -d "$LIBRARY" -a -d "$DESTINATION" ] || {
+	echo "$LIBRARY or $DESTINATION aren't folders" >&2
+	exit 1
+}
+
+[ -w "$DESTINATION" ] || { echo "$DESTINATION is not writable" ; exit 1 ; }
+
+truefalse "Do you wish to empty $DESTINATION before proceeding (y/n)? "
+if [ "$ANSWER" = "y" ]
+then
+	rm -Rf "$DESTINATION"
+	mkdir -p "$DESTINATION"
+	TOTAL_COPIED=0
+else
+	# we begin with TOTAL_COPIED equal to the actual size of the destination
+	TOTAL_COPIED=`du -s "$DESTINATION" | cut -f1`
+	TOTAL_COPIED=`expr $TOTAL_COPIED '*' 1024`
+fi
+
+cd "$LIBRARY"
+find . -iname '*.mp3' | shuf | while read MP3FILE
+do
+	FILESIZE=`stat -c %s "$MP3FILE"`
+	if [ `expr $TOTAL_COPIED + $FILESIZE` -gt $MAX_SIZE ]
+	then
+		echo "Reached max space of $MAX_SIZE. Will not copy any more files"
+		break
+	fi
+	echo -n "Copying $MP3FILE... "
+	if cp --parents "$MP3FILE" "$DESTINATION"
+	then
+		echo "OK"
+		TOTAL_COPIED=`expr $TOTAL_COPIED + $FILESIZE`
+		
+	else
+		echo "FAIL"
+		echo "Can't copy $MP3FILE to $DESTINATION" >&2
+		EXIT_STATUS=2
+	fi
+done
+
+exit $EXIT_STATUS
