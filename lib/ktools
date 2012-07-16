@@ -1,0 +1,43 @@
+
+truefalse() {
+	TEXT="$1"
+	DEFAULT=""
+	ANSWER=""
+	if [ $# -eq 2 ]
+	then
+		if [ "$2" -eq 0 ]
+		then
+			TEXT="$TEXT (Y/n) "
+		elif [ "$2" -eq 1 ]
+		then
+			TEXT="$TEXT (y/N) "
+		else
+			echo "Wrong parameter to truefalse: $2"
+			exit 1
+		fi
+		DEFAULT="$2"
+	fi
+
+	while [ -z "$ANSWER" ]
+	do
+		read -p "$TEXT" ANSWER
+		case "`echo $ANSWER | tr '[A-Z]' '[a-z]'`" in
+			y|yes|si|s)
+				ANSWER=0
+				;;
+			n|no)
+				ANSWER=1
+				;;
+			*)
+				if [ "$DEFAULT" ]
+				then
+					ANSWER="$DEFAULT"
+				else
+					ANSWER=""
+				fi
+		esac
+	done
+	return "$ANSWER"
+}
+
+# vim: ts=4:sts=4:noet:ft=sh

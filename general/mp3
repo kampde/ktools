@@ -1,39 +1,40 @@
-#!/bin/sh
-
-truefalse() {
-	ANSWER=
-	while [ "$ANSWER" != "y" -a "$ANSWER" != "n" ]
-	do
-		read -p "$*" ANSWER
-		case "$ANSWER" in
-			y|yes|si|s)
-				ANSWER=y
-				;;
-			n|no)
-				ANSWER=n
-				;;
-		esac
-	done
-}
+#!/bin/sh -e
 
 if [ $# -ne 3 ]
 then
-	echo "Uso: $0 path/to/mp3/library path/to/destination/folder max_size" >&2
+	echo "Usage: $0 path/to/mp3/library path/to/destination/folder max_size" >&2
 	exit 1
 fi
 
 LIBRARY="$1"
 DESTINATION=`readlink -f "$2"`
 MAX_SIZE="$3"
-[ -d "$LIBRARY" -a -d "$DESTINATION" ] || {
+
+SCRIPT=`readlink -f "$0"`
+KTOOLS_LIB=`dirname "$SCRIPT"`/../lib/ktools
+
+if [ -r "$KTOOLS_LIB" ]
+then
+	. "$KTOOLS_LIB"
+else
+	echo "Can't locate ktools library. Aborting" >&2
+	exit 2
+fi
+
+if ! [ -d "$LIBRARY" -a -d "$DESTINATION" ]
+then
 	echo "$LIBRARY or $DESTINATION aren't folders" >&2
 	exit 1
-}
+fi
 
-[ -w "$DESTINATION" ] || { echo "$DESTINATION is not writable" ; exit 1 ; }
+if ! [ -w "$DESTINATION" ]
+then
+	echo "$DESTINATION is not writable" >&2
+	exit 1
+fi
 
-truefalse "Do you wish to empty $DESTINATION before proceeding (y/n)? "
-if [ "$ANSWER" = "y" ]
+
+if truefalse "Do you wish to empty $DESTINATION before proceeding (y/n)? "
 then
 	rm -Rf "$DESTINATION"
 	mkdir -p "$DESTINATION"
