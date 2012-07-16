@@ -22,14 +22,14 @@ truefalse() {
 	do
 		read -p "$TEXT" ANSWER
 		case "`echo $ANSWER | tr '[A-Z]' '[a-z]'`" in
-			y|yes|si|s)
+			y|yes)
 				ANSWER=0
 				;;
 			n|no)
 				ANSWER=1
 				;;
 			*)
-				if [ "$DEFAULT" ]
+				if [ -z "$ANSWER" -a "$DEFAULT" ]
 				then
 					ANSWER="$DEFAULT"
 				else
