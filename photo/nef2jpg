@@ -1,29 +1,58 @@
 #!/bin/bash
 
+set -o noclobber
+
 EXITVAL=0
 
-for i
+convierte() {
+	local orig="$1"
+	local dest="$2"
+
+	local exitval=0
+
+	echo -n "Creando $dest ... "
+	if dcraw -e -c "$orig" > "$dest"
+	then
+		echo "  OK"
+		echo -n "Aplicando EXIF a $dest ... "
+		if exiftool -overwrite_original -TagsFromFile "$orig" "$dest"
+		then
+			echo "  OK"
+		else
+			echo "  MIERDA"
+		fi
+	else
+		echo "  MIERDA"
+		exitval=3
+	fi
+	return $exitval
+}
+
+PARALLEL_PROCS=4
+FOTONUM=0
+for foto
 do
-	ext="${i: -4}"
+	FOTONUM=$((FOTONUM + 1))
+	ext="${foto: -4}"
 	if [ "${ext}" = ".nef" -o "${ext}" = ".NEF" ]
 	then
 
-		nom="../"${i:0:8}".from_raw.jpg"
-		if [ -e "$nom" ]
+		nom="../"${foto:0:8}".from_raw.jpg"
+		if [ -s "$nom" ]
 		then
-			echo $nom existe
+			echo "$nom existe"
 		else
-			echo -n "Creando $nom ... "
-			if dcraw -e -c $i > $nom
-			then
-				echo "  OK"
-			else
-				echo "  MIERDA"
-				EXITVAL=3
-			fi
+			convierte "$foto" "$nom" &
 		fi
 	else
-		echo "$i no es una imagen raw (NEF)" >&2
+		echo "$foto no es una imagen raw (NEF)" >&2
 		EXITVAL=1
 	fi
+
+	if [ "$((FOTONUM % PARALLEL_PROCS))" = "0" ]
+	then
+		echo "Waiting..."
+		wait
+	fi
 done
+wait
