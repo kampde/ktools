@@ -33,11 +33,11 @@ FOTONUM=0
 for foto
 do
 	FOTONUM=$((FOTONUM + 1))
-	ext="${foto: -4}"
-	if [ "${ext}" = ".nef" -o "${ext}" = ".NEF" ]
+	ext="${foto##*.}"
+	if [ "${ext,,}" = "nef" ]
 	then
 
-		nom="../"${foto:0:8}".from_raw.jpg"
+		nom="../"${foto%.*}".from_raw.jpg"
 		if [ -s "$nom" ]
 		then
 			echo "$nom existe"
