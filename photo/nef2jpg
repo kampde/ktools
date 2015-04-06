@@ -11,6 +11,8 @@ Converts NEF_FILE to jpg and stores it in parent folder.
 Valid options are:
 
     -h, --help                   Show this help and exit
+    -d, --dimension=DIMENSION    Make jpg of dimensions DIMENSION (use orig to
+                                 keep NEF dimensions). (Default: $dimension)
     -e, --keep-exif              Copy the EXIF info from the NEF to the JPG.
                                  (Default: $keep_exif)
     --no-keep-exif               Do not copy the EXIF from the NEF to the JPG.
@@ -21,11 +23,12 @@ USAGE
 
 EXITVAL=0
 
-OUTOPT=$(getopt --options ehp: --long help,keep-exif,no-keep-exif,parallel: -n "$0" -- "$@")
+OUTOPT=$(getopt --options d:ehp: --long help,keep-exif,no-keep-exif,dimension:,parallel: -n "$0" -- "$@")
 
 eval set -- "$OUTOPT"
 
 keep_exif=on
+dimension=1920x1080
 jobs=4
 
 while true
@@ -42,6 +45,15 @@ do
 	--no-keep-exif)
 		keep_exif=
 		shift
+		;;
+	-d|--dimension)
+		if [ "$2" = "orig" ]
+		then
+			dimension=
+		else
+			dimension="$2"
+		fi
+		shift 2
 		;;
 	-p|--parallel)
 		jobs="$2"
@@ -61,6 +73,13 @@ do
 	esac
 done
 
+if [ "$dimension" ]
+then
+	resize_params=("-resize" "$dimension")
+else
+	resize_params=()
+fi
+
 convierte() {
 	local orig="$1"
 	local dest="$2"
@@ -68,7 +87,7 @@ convierte() {
 	local exitval=0
 
 	echo -n "Creando $dest ... "
-	if dcraw -e -c "$orig" > "$dest"
+	if dcraw -e -c "$orig" | convert - "${resize_params[@]}" "$dest"
 	then
 		echo "  OK"
 		if [ "$keep_exif" ]
