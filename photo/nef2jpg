@@ -2,9 +2,57 @@
 
 set -o noclobber
 
+usage() {
+	cat <<USAGE
+usage: $0 [OPTIONS] NEF_FILE[..]
+
+Converts NEF_FILE to jpg and stores it in parent folder.
+
+Valid options are:
+
+    -h, --help                   Show this help and exit
+    -e, --keep-exif              Copy the EXIF info from the NEF to the JPG.
+                                 (Default: $keep_exif)
+    --no-keep-exif               Do not copy the EXIF from the NEF to the JPG.
+USAGE
+}
+
 EXITVAL=0
 
+OUTOPT=$(getopt --options eh --long help,keep-exif,no-keep-exif -n "$0" -- "$@")
+
+eval set -- "$OUTOPT"
+
 keep_exif=on
+while true
+do
+	case "$1" in
+	-h|--help)
+		usage
+		exit 0
+		;;
+	-e|--keep-exif)
+		keep_exif=1
+		shift
+		;;
+	--no-keep-exif)
+		keep_exif=
+		shift
+		;;
+	--)
+		# end of processed getopt options, break the loop
+		shift
+		break
+		;;
+	*)
+		ERROR=$[ ( $RANDOM % 10000 ) + 1 ]
+		echo "[-] Unexpected error: code $ERROR" >&2
+		exit 1
+		break
+		;;
+	esac
+done
+
 convierte() {
 	local orig="$1"
 	local dest="$2"
