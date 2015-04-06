@@ -4,6 +4,7 @@ set -o noclobber
 
 EXITVAL=0
 
+keep_exif=on
 convierte() {
 	local orig="$1"
 	local dest="$2"
@@ -14,12 +15,15 @@ convierte() {
 	if dcraw -e -c "$orig" > "$dest"
 	then
 		echo "  OK"
-		echo -n "Aplicando EXIF a $dest ... "
-		if exiftool -overwrite_original -TagsFromFile "$orig" "$dest"
+		if [ "$keep_exif" ]
 		then
-			echo "  OK"
-		else
-			echo "  MIERDA"
+			echo -n "Aplicando EXIF a $dest ... "
+			if exiftool -overwrite_original -TagsFromFile "$orig" "$dest"
+			then
+				echo "  OK"
+			else
+				echo "  MIERDA"
+			fi
 		fi
 	else
 		echo "  MIERDA"
