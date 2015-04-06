@@ -14,16 +14,20 @@ Valid options are:
     -e, --keep-exif              Copy the EXIF info from the NEF to the JPG.
                                  (Default: $keep_exif)
     --no-keep-exif               Do not copy the EXIF from the NEF to the JPG.
+    -p, --parallel=JOBS          Execute JOBS conversion in parallel
+                                 (default: $jobs)
 USAGE
 }
 
 EXITVAL=0
 
-OUTOPT=$(getopt --options eh --long help,keep-exif,no-keep-exif -n "$0" -- "$@")
+OUTOPT=$(getopt --options ehp: --long help,keep-exif,no-keep-exif,parallel: -n "$0" -- "$@")
 
 eval set -- "$OUTOPT"
 
 keep_exif=on
+jobs=4
+
 while true
 do
 	case "$1" in
@@ -38,6 +42,10 @@ do
 	--no-keep-exif)
 		keep_exif=
 		shift
+		;;
+	-p|--parallel)
+		jobs="$2"
+		shift 2
 		;;
 	--)
 		# end of processed getopt options, break the loop
@@ -80,7 +88,6 @@ convierte() {
 	return $exitval
 }
 
-PARALLEL_PROCS=4
 FOTONUM=0
 for foto
 do
@@ -101,7 +108,7 @@ do
 		EXITVAL=1
 	fi
 
-	if [ "$((FOTONUM % PARALLEL_PROCS))" = "0" ]
+	if [ "$((FOTONUM % jobs))" = "0" ]
 	then
 		echo "Waiting..."
 		wait
